@@ -275,10 +275,10 @@ function stage(r){
  if(f==="posted")return{segs:["fin","fin","fin","fin","fin"],label:"Đã đăng",cls:"gr"};
  return{segs:["done","done","bad","todo","todo"],label:"Đã bỏ",cls:"rd"}}
 function home(){
- var td=today(),cm=monday(td),expect=addDays(cm,-7),all=slots(),weekSlots=all.filter(function(s){return s.date>=cm&&s.date<=addDays(cm,6)});
+ var td=today(),cm=monday(td),expect=addDays(cm,-7),all=slots(),weekSlots=all.filter(function(s){return s.date>=td&&s.date<=addDays(td,13)});  /* slot sắp tới (14 ngày) */
  var todays=all.filter(function(s){return s.date===td}),todayLeft=todays.filter(function(s){return!draftFor(s)});
- var upcomingLeft=weekSlots.filter(function(s){return s.date>=td&&!draftFor(s)});
- var pn=pendingN(),an=cnt("approved"),busy=S.job.running,noC=!S.env.claude,scanned=S.sources.date===expect;
+ var upcomingLeft=weekSlots.filter(function(s){return!draftFor(s)});
+ var pn=pendingN(),an=cnt("approved"),busy=S.job.running,noC=!S.env.claude,scanned=!!S.sources.date&&S.sources.date>=expect;
  var st=[
   {ic:"scan",l:"Chờ quét dữ liệu",n:scanned?0:1,own:["Agent","t-ac"],go:function(){setTab("run")}},
   {ic:"cal",l:"Chờ lập kế hoạch",n:weekSlots.length?0:1,own:["Agent","t-ac"],go:function(){setTab("run")}},
@@ -293,12 +293,12 @@ function home(){
  if(pn>0)b={c:"",ic:"bell",t:pn+" bài đang chờ bạn duyệt",s:"Caption và prompt ảnh đã qua QA. Bấm để xem, sửa và duyệt.",btn:["Xử lý ngay →",function(){qfilter="open";qdate="all";setTab("queue")}]};
  else if(an>0)b={c:"blue",ic:"send",t:an+" bài đã duyệt, chờ bạn đăng",s:"Copy caption, đăng vào group rồi đánh dấu đã đăng (có thể dán link bài).",btn:["Mở danh sách →",function(){qfilter="approved";qdate="all";setTab("queue")}]};
  else if(!scanned)b={c:"blue",ic:"scan",t:"Chưa quét dữ liệu tuần "+ddmm(expect)+" → "+ddmm(addDays(expect,6)),s:"Quét các nguồn tin của tuần trước (thường làm sáng thứ Hai).",btn:["Quét ngay",function(){runJob("collect")},busy]};
- else if(!weekSlots.length)b={c:"blue",ic:"cal",t:"Tuần này chưa có kế hoạch",s:"Chạy /weekly để chọn chủ đề và lập lịch 1–2 bài mỗi ngày.",btn:["Chạy /weekly",function(){runJob("weekly")},busy||noC]};
+ else if(!weekSlots.length)b={c:"blue",ic:"cal",t:"Chưa có kế hoạch cho các ngày sắp tới",s:"Chạy /weekly để chọn chủ đề và lập lịch 1–2 bài mỗi ngày.",btn:["Chạy /weekly",function(){runJob("weekly")},busy||noC]};
  else if(todayLeft.length)b={c:"blue",ic:"edit",t:"Hôm nay còn "+todayLeft.length+" slot chưa soạn",s:"Chạy /daily để viết caption và prompt ảnh cho hôm nay.",btn:["Chạy /daily",function(){runJob("daily")},busy||noC]};
  else b={c:"green",ic:"check",t:"Mọi việc hôm nay đã xong",s:"Không có bài chờ duyệt hay chờ đăng.",btn:["Xem kế hoạch →",function(){setTab("plan")}]};
  var banner=h("div",{class:"banner "+b.c},[h("div",{class:"ic"},ico(b.ic)),h("div",{class:"tx"},[h("b",{},b.t),h("span",{},b.s)]),h("button",{disabled:b.btn[2]?"disabled":false,onclick:b.btn[1]},b.btn[0])]);
  return h("div",{},[
-  pageHead("WORKFLOW","Quét dữ liệu tuần → /weekly lập kế hoạch → /daily soạn bài → Bạn duyệt → Đăng",tag(weekSlots.length+" bài trong tuần này","t-ac")),
+  pageHead("WORKFLOW","Quét dữ liệu tuần → /weekly lập kế hoạch → /daily soạn bài → Bạn duyệt → Đăng",tag(weekSlots.length+" bài sắp tới","t-ac")),
   busy?h("div",{class:"card",style:"margin-bottom:14px"},"Đang chạy: "+S.job.name+" … xem tiến trình ở tab Chạy lệnh."):null,
   banner,cards,progressTable(),
   S.feedback.length?h("div",{class:"card",style:"margin-top:16px"},[h("h3",{},"Phản hồi gần đây của bạn (agent đọc khi soạn)"),h("ul",{},S.feedback.map(function(f){return h("li",{},f.id+": "+f.feedback)}))]):null])}

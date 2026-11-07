@@ -4,6 +4,7 @@ Kết quả: data/weekly/<ngày thứ Hai của cửa sổ>/*.json   (ví dụ c
 Dùng:
   python scripts/collect_sources.py                     # cửa sổ = tuần Thứ Hai..Chủ nhật vừa kết thúc
   python scripts/collect_sources.py --week 2026-11-02   # chạy bù cho tuần bắt đầu thứ Hai này (Serper lọc lệch, xem serp.py)
+  python scripts/collect_sources.py --week 2026-11-02 --end 2026-11-06   # rút ngắn cửa sổ (ví dụ thứ Hai..thứ Sáu)
 Mỗi nguồn độc lập: một nguồn lỗi không làm hỏng các nguồn khác.
 """
 import datetime as dt
@@ -34,17 +35,23 @@ RSS_FEEDS = {
     "tomshardware": "https://www.tomshardware.com/feeds/all",
 }
 SUBREDDITS = ["LocalLLaMA", "ollama", "LocalLLM"]
+DOWN = ["Hai", "Ba", "Tư", "Năm", "Sáu", "Bảy", "Chủ nhật"]
 
 
-def week_window(today=None, monday=None):
-    """Cửa sổ thứ Hai..Chủ nhật. Mặc định: tuần trọn vẹn gần nhất đã kết thúc (chạy sáng thứ Hai -> tuần trước)."""
+def week_window(today=None, monday=None, end=None):
+    """Cửa sổ thứ Hai..Chủ nhật. Mặc định: tuần trọn vẹn gần nhất đã kết thúc (chạy sáng thứ Hai -> tuần trước).
+    `end` (tùy chọn) rút ngắn cửa sổ, ví dụ thứ Sáu khi cần chạy sớm."""
     if monday:
         start = monday
     else:
         today = today or dt.datetime.now(VN).date()
         start = today - dt.timedelta(days=today.weekday() + 7)  # thứ Hai của tuần trước
-    end = start + dt.timedelta(days=6)
-    return {"start": start, "end": end, "label": start.isoformat()}
+    last = start + dt.timedelta(days=6)
+    if end:
+        if not (start <= end <= last):
+            raise SystemExit("--end phải nằm trong cùng tuần với --week (từ thứ Hai đến Chủ nhật)")
+        last = end
+    return {"start": start, "end": last, "label": start.isoformat()}
 
 
 WIN = None
@@ -117,13 +124,14 @@ def main():
         monday = dt.date.fromisoformat(args[args.index("--week") + 1])
         if monday.weekday() != 0:
             sys.exit("--week phải là một ngày thứ Hai (YYYY-MM-DD)")
-    WIN = week_window(monday=monday)
+    end = dt.date.fromisoformat(args[args.index("--end") + 1]) if "--end" in args else None
+    WIN = week_window(monday=monday, end=end)
     OUT = ROOT / "data" / "weekly" / WIN["label"]
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "_window.json").write_text(json.dumps(
         {"start": WIN["start"].isoformat(), "end": WIN["end"].isoformat(),
          "collected_at": dt.datetime.now(VN).isoformat(timespec="seconds")}, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Cửa sổ tuần: {WIN['start']} (thứ Hai) .. {WIN['end']} (Chủ nhật)")
+    print(f"Cửa sổ thu thập: {WIN['start']} (thứ {DOWN[WIN['start'].weekday()]}) .. {WIN['end']} (thứ {DOWN[WIN['end'].weekday()]})")
     import serp
     import yt_channels
     steps = [

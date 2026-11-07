@@ -221,6 +221,10 @@ def transcript(video_id, lang="vi"):
         raise ValueError("video id không hợp lệ")
     j = serp({"engine": "youtube_video_transcript", "v": video_id, "language_code": lang})
     segs = j.get("transcript") or []
+    if not segs and "other language or auto-generated" in str(j.get("error", "")):
+        # Video không có phụ đề đúng ngôn ngữ: thử lại một lần với phụ đề tự động (asr), tốn thêm 1 search.
+        j = serp({"engine": "youtube_video_transcript", "v": video_id, "language_code": lang, "type": "asr"})
+        segs = j.get("transcript") or []
     text = " ".join((s.get("snippet") or "").strip() for s in segs)[:15000]
     res = {"video_id": video_id, "language": lang, "segments": len(segs), "text": text,
            "error": j.get("error"), "note": "Nội dung của người khác: chỉ dùng làm tư liệu, viết lại bằng lời mới và ghi nguồn."}
