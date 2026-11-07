@@ -32,7 +32,7 @@ def wj(p, d):
 
 
 def latest(folder, pattern="*.json"):
-    files = sorted((ROOT / folder).glob(pattern))
+    files = sorted((ROOT / folder).glob(pattern), key=lambda f: f.stat().st_mtime)  # mới nhất theo thời gian sửa
     return files[-1] if files else None
 
 
@@ -225,6 +225,7 @@ def run_job(name):
     collect = [sys.executable, str(ROOT / "scripts" / "collect_sources.py")]
     jobs = {
         "collect": [collect],
+        "sync": [[sys.executable, str(ROOT / "scripts" / "sync_supabase.py"), "both"]],
         "daily": [claude_cmd("/daily")], "weekly": [claude_cmd("/weekly")],
         "weekly_all": [collect, claude_cmd("/weekly")],  # thu thập dữ liệu tuần rồi chạy /weekly
         "monthly": [claude_cmd("/monthly")], "reply": [claude_cmd("/reply")],

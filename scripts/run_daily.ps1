@@ -20,6 +20,8 @@ try {
     if ($Mode -eq "weekly") { python scripts\collect_sources.py *>> $log }
     & $claude -p "/$Mode" --permission-mode acceptEdits `
         --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "WebSearch" "Task" *>> $log
+    # đồng bộ lên Supabase để nhân viên thấy ngay (lỗi đồng bộ không làm hỏng cả quy trình)
+    try { python scripts\sync_supabase.py both *>> $log } catch { }
     if ($Mode -eq "daily") { python scripts\telegram_bot.py send *>> $log }
     else { python scripts\telegram_bot.py notify "Đã chạy xong /$Mode. Xem reports/ và dashboard." *>> $log }
 }

@@ -76,7 +76,9 @@ def supabase():
         return f"LỖI {r.status_code}: {r.text[:150]}"
     t = requests.get(f"{url}/rest/v1/reports", params={"select": "id", "limit": 1}, headers=h, timeout=T)
     schema = "đã có bảng reports" if t.status_code == 200 else "CHƯA chạy supabase/schema.sql (chưa có bảng reports)"
-    return f"OK, khóa service_role hoạt động; {schema}"
+    d = requests.get(f"{url}/rest/v1/drafts", params={"select": "id", "limit": 1}, headers=h, timeout=T)
+    staff = "đã có bảng cho nhân viên" if d.status_code == 200 else "CHƯA chạy supabase/schema_staff.sql (bản web nhân viên chưa dùng được)"
+    return f"OK, khóa service_role hoạt động; {schema}; {staff}"
 
 
 CHECKS = {"telegram": telegram, "serper": serper, "serpapi": serpapi, "youtube": youtube, "supabase": supabase}

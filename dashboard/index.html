@@ -195,16 +195,18 @@ function cnt(st){return S.drafts.filter(function(d){return d._folder===st}).leng
 function pendingN(){return cnt("pending")+cnt("sent")}
 
 /* ---------- khung ---------- */
+function sideCardItems(busy){return[
+  h("div",{class:"st"},[h("span",{class:"dot "+(S.env.telegram?"ok":"wn")}),"Telegram: "+(S.env.telegram?"đã cấu hình":"chưa cấu hình")]),
+  h("div",{class:"st"},[h("span",{class:"dot "+(S.env.claude?"ok":"wn")}),"Claude CLI: "+(S.env.claude?"có":"không thấy")]),
+  h("div",{class:"st"},[h("span",{class:"dot ok"}),"Giai đoạn 1 · 0% bán hàng"]),
+  h("button",{disabled:(busy||!S.env.claude)?"disabled":false,onclick:function(){runJob("weekly_all")}},busy?"Đang chạy…":"Chạy cả tuần")]}
+
 function render(){
  if(!S)return;
  var n=pendingN(),busy=S.job.running;
  var nav=document.getElementById("nav");nav.replaceChildren.apply(nav,TABS.map(function(t){
   return h("button",{class:t[0]===tab?"on":"",onclick:function(){setTab(t[0])}},[ico(t[2]),t[1],(t[0]==="queue"&&n)?h("span",{class:"badge"},n):null])}));
- var sc=document.getElementById("sidecard");sc.replaceChildren(
-  h("div",{class:"st"},[h("span",{class:"dot "+(S.env.telegram?"ok":"wn")}),"Telegram: "+(S.env.telegram?"đã cấu hình":"chưa cấu hình")]),
-  h("div",{class:"st"},[h("span",{class:"dot "+(S.env.claude?"ok":"wn")}),"Claude CLI: "+(S.env.claude?"có":"không thấy")]),
-  h("div",{class:"st"},[h("span",{class:"dot ok"}),"Giai đoạn 1 · 0% bán hàng"]),
-  h("button",{disabled:(busy||!S.env.claude)?"disabled":false,onclick:function(){runJob("weekly_all")}},busy?"Đang chạy…":"Chạy cả tuần"));
+ var sc=document.getElementById("sidecard");sc.replaceChildren.apply(sc,sideCardItems(busy));
  var tr=document.getElementById("topright");tr.replaceChildren(
   h("button",{class:"bell",title:"Bài chờ duyệt",onclick:function(){qfilter="open";qdate="all";setTab("queue")}},[ico("bell"),n?h("i",{},n):null]),
   h("div",{class:"chip"},[h("span",{class:"dot "+(S.sources.window?"ok":"wn")}),"Dữ liệu tuần:",h("b",{},S.sources.window?S.sources.window.replace(/(\d{4})-(\d\d)-(\d\d)/g,"$3/$2"):"chưa quét"),S.sources.collected_at?"· "+ago(S.sources.collected_at):""]));
@@ -413,7 +415,7 @@ function reports(){
 
 /* ---------- CHẠY LỆNH ---------- */
 function run(){
- var j=S.job,jobs=[["weekly_all","Chạy cả tuần (sáng thứ Hai)","Thu thập dữ liệu tuần trước (thứ Hai..Chủ nhật) rồi chạy /weekly",true],["collect","Chỉ thu thập dữ liệu tuần","python scripts/collect_sources.py",false],["daily","/daily","Caption + prompt ảnh cho slot hôm nay, rồi QA (dùng kế hoạch tuần)",true],["weekly","/weekly","Chọn chủ đề, báo cáo tuần, kế hoạch tuần mới (cần dữ liệu tuần đã thu thập)",true],["monthly","/monthly","Báo cáo tháng",true],["reply","/reply","Soạn trả lời comment (cần data/inbox/comments.json)",true]];
+ var j=S.job,jobs=[["weekly_all","Chạy cả tuần (sáng thứ Hai)","Thu thập dữ liệu tuần trước (thứ Hai..Chủ nhật) rồi chạy /weekly",true],["collect","Chỉ thu thập dữ liệu tuần","python scripts/collect_sources.py",false],["daily","/daily","Caption + prompt ảnh cho slot hôm nay, rồi QA (dùng kế hoạch tuần)",true],["weekly","/weekly","Chọn chủ đề, báo cáo tuần, kế hoạch tuần mới (cần dữ liệu tuần đã thu thập)",true],["sync","Đồng bộ lên web","Đẩy bài nháp, kế hoạch, chủ đề, báo cáo lên Supabase và nhận thao tác của nhân viên",false],["monthly","/monthly","Báo cáo tháng",true],["reply","/reply","Soạn trả lời comment (cần data/inbox/comments.json)",true]];
  return h("div",{},[pageHead("CHẠY LỆNH","Các bước agent làm trên máy của bạn. Không lệnh nào tự đăng bài."),
   h("div",{class:"grid"},[h("div",{class:"grid g2"},jobs.map(function(x){var dis=j.running||(x[3]&&!S.env.claude);
    return h("div",{class:"card"},[h("h3",{},x[1]),h("div",{class:"muted",style:"margin-bottom:10px"},x[2]),h("button",{class:"b pri",disabled:dis?"disabled":false,onclick:function(){runJob(x[0])}},"Chạy")])})),
