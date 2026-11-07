@@ -34,12 +34,12 @@ Comment mới: dán vào `data/inbox/comments.json` rồi chạy `/reply`.
 5. Trang xem: thư mục `docs/` (điền `docs/config.js` bằng URL + anon key; GitHub Pages: Source = Deploy from a branch, thư mục /docs). Đặt ở hosting tĩnh bất kỳ; thêm địa chỉ trang vào Authentication → URL Configuration → Redirect URLs.
 
 ## Bản web cho nhân viên (Supabase)
-Nhân viên đăng nhập vào `docs/app.html` (GitHub Pages) và dùng dashboard như bạn: xem mọi tab, sửa caption, duyệt/bỏ, đánh dấu đã đăng. Agent vẫn chạy trên máy chủ chính của bạn; nút Chạy lệnh bị ẩn trên bản web.
+Mọi người đăng nhập vào MỘT link duy nhất: trang gốc `docs/index.html` (GitHub Pages) và dùng dashboard như bạn: xem mọi tab, sửa caption, duyệt/bỏ, đánh dấu đã đăng. Agent vẫn chạy trên máy chủ chính của bạn; nút Chạy lệnh bị ẩn trên bản web.
 1. SQL Editor: chạy `supabase/schema.sql` rồi `supabase/schema_staff.sql` (một lần).
 2. Nhân viên = MỌI tài khoản trong Supabase Authentication -> Users (chạy thêm `supabase/staff_any_user.sql` một lần). Thêm người: Add user -> Create new user (tick Auto Confirm). Giữ "Allow new users to sign up" TẮT. Họ đọc được TOÀN BỘ bài nháp, kế hoạch, chủ đề, báo cáo. Liệt kê/thu hồi: `python scripts/manage_staff.py list|remove`.
 3. Đồng bộ: `python scripts/sync_supabase.py both` (hoặc nút "Đồng bộ lên web" trên dashboard cục bộ). `run_daily.ps1` tự đồng bộ sau mỗi lần chạy. Nên đặt thêm lịch chạy lệnh này mỗi 10-15 phút để nhận thao tác của nhân viên.
 4. Sửa giao diện dashboard rồi build lại bản web: `python scripts/build_web_app.py`.
-5. Thêm địa chỉ `.../app.html` vào Supabase Authentication -> URL Configuration -> Redirect URLs.
+5. Thêm địa chỉ trang gốc (kết thúc bằng `/`) vào Supabase Authentication -> URL Configuration -> Redirect URLs.
 Không đưa lên Supabase: .env, Brand Brain/FAQ, transcript, dữ liệu thô tuần, danh sách kênh theo dõi.
 
 ## Lưu ý

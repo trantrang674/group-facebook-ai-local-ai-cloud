@@ -1,4 +1,4 @@
-"""Tạo bản web của dashboard: docs/app.html = dashboard/index.html + lớp dữ liệu Supabase (dashboard/remote_layer.js).
+"""Tạo bản web của dashboard: docs/index.html = dashboard/index.html + lớp dữ liệu Supabase (dashboard/remote_layer.js).
 Chạy lại mỗi khi sửa giao diện dashboard/index.html:  python scripts/build_web_app.py
 """
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "dashboard" / "index.html"
 LAYER = ROOT / "dashboard" / "remote_layer.js"
-OUT = ROOT / "docs" / "app.html"
+OUT = ROOT / "docs" / "index.html"   # MỘT link duy nhất (trang gốc) cho mọi người đăng nhập
 CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"
 
 
