@@ -1,0 +1,20 @@
+# ===== BÍ MẬT =====
+.env
+secrets/
+*.json.key
+*credentials*.json
+service-account*.json
+
+# ===== DỮ LIỆU LÀM VIỆC (chỉ nằm trên máy bạn, KHÔNG được công khai) =====
+data/
+reports/
+logs/
+__pycache__/
+
+# Brand Brain, danh sách kênh theo dõi: riêng tư. Chỉ file mẫu *.example.* được công khai.
+brand/*
+!brand/*.example.md
+config/youtube_channels.txt
+
+# Cache/ file cục bộ
+.serpapi_usage.json

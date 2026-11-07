@@ -1,0 +1,41 @@
+# Từ khóa dùng để chấm độ phù hợp của video với chủ đề group (không phân biệt hoa thường, bỏ dấu tiếng Việt).
+# Mỗi dòng một từ/cụm từ. Video có càng nhiều từ khóa trong tiêu đề + mô tả thì càng được ưu tiên lấy transcript.
+ai
+llm
+ollama
+local
+lm studio
+llama
+qwen
+gemma
+mistral
+deepseek
+gemini
+chatgpt
+gpt
+claude
+copilot
+cursor
+agent
+mcp
+rag
+prompt
+model
+vibe coding
+vibecoding
+lap trinh
+code
+n8n
+tu dong hoa
+automation
+workflow
+mo hinh
+ma nguon mo
+open source
+gpu
+vram
+nvidia
+rtx
+cau hinh
+cloud
+api

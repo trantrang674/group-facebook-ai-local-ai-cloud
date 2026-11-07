@@ -1,0 +1,4 @@
+# MẪU. Sao chép thành config/youtube_channels.txt (file thật bị .gitignore chặn) rồi thay bằng kênh của bạn.
+# Mỗi dòng một kênh: link @handle hoặc /channel/UC...
+# https://www.youtube.com/@tenkenh1
+# https://www.youtube.com/@tenkenh2

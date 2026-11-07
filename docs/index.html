@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Báo cáo nội bộ</title>
+<style>
+:root{--bg1:#eaf1ff;--bg2:#fbfdff;--card:#fff;--tx:#0f1b3d;--mut:#5b6b8c;--ln:#e1e8f5;--ac:#1f56e0;--acs:#e6eeff;--navy:#0b2a6f;--bad:#c62a35;--bads:#fde8ea;--shadow:0 6px 20px rgba(15,40,110,.08)}
+@media(prefers-color-scheme:dark){:root{--bg1:#0a1226;--bg2:#0d1730;--card:#121c36;--tx:#e7edfb;--mut:#93a3c4;--ln:#24335a;--ac:#7aa5ff;--acs:#182a57;--bad:#ff7b80;--bads:#3a1c1e;--shadow:0 6px 20px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}
+body{margin:0;color:var(--tx);font:16px/1.6 system-ui,"Segoe UI",sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2) 55%,var(--bg1));min-height:100vh}
+header{background:linear-gradient(90deg,var(--navy),#123a9c);color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header b{font-size:1.05rem}header span{font-size:.85rem;opacity:.85}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 60px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow)}
+.login{max-width:440px;margin:40px auto}
+h1{margin:0 0 6px;font-size:1.5rem;color:var(--navy)}@media(prefers-color-scheme:dark){h1{color:#9bbcff}}
+.sub{color:var(--mut);margin:0 0 16px;font-size:.92rem}
+input[type=email]{width:100%;font:inherit;padding:10px 14px;border:1px solid var(--ln);border-radius:12px;background:var(--bg2);color:var(--tx)}
+button{font:inherit;cursor:pointer;border-radius:999px;padding:9px 20px;border:1px solid var(--ac);background:var(--ac);color:#fff;font-weight:600}
+button.ghost{background:transparent;color:inherit;border-color:rgba(255,255,255,.5);padding:5px 14px;font-weight:500}
+button:disabled{opacity:.55;cursor:not-allowed}
+.msg{margin-top:12px;padding:10px 14px;border-radius:10px;background:var(--acs);color:var(--ac);font-size:.92rem}.msg.err{background:var(--bads);color:var(--bad)}
+.layout{display:grid;grid-template-columns:minmax(200px,270px) minmax(0,1fr);gap:16px}
+.list button{display:block;width:100%;text-align:left;margin:4px 0;border-radius:10px;background:transparent;color:var(--tx);border:1px solid var(--ln);font-weight:500;padding:8px 12px}
+.list button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.list small{display:block;color:var(--mut);font-weight:400}.list button.on small{color:#cfd9f5}
+.md h2,.md h3,.md h4,.md h5{margin:18px 0 6px;color:var(--navy)}@media(prefers-color-scheme:dark){.md h2,.md h3,.md h4,.md h5{color:#9bbcff}}
+.md p{margin:8px 0}.md table{width:100%;border-collapse:collapse;margin:10px 0;border:1px solid var(--ln)}.md th,.md td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--ln);vertical-align:top}
+.md code{background:var(--bg1);padding:1px 5px;border-radius:4px}.md pre.code{background:var(--bg1);padding:10px;border-radius:8px;white-space:pre-wrap}.md ul,.md ol{padding-left:22px}.md hr{border:0;border-top:1px solid var(--ln)}
+.empty{color:var(--mut);text-align:center;padding:30px}.hide{display:none}
+@media(max-width:800px){.layout{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<header><div><b id="ttl">Báo cáo nội bộ</b></div><div id="who"></div></header>
+<main id="app"></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+var C=window.SITE_CONFIG||{},sb=null,app=document.getElementById("app"),who=document.getElementById("who"),cur=null;
+document.getElementById("ttl").textContent=C.TITLE||"Báo cáo nội bộ";
+function h(tag,attrs,kids){var e=document.createElement(tag);attrs=attrs||{};
+ for(var k in attrs){var v=attrs[k];if(k==="class")e.className=v;else if(k.indexOf("on")===0)e.addEventListener(k.slice(2),v);else if(v!==false&&v!=null)e.setAttribute(k,v);}
+ (function add(c){if(c==null||c===false)return;if(Array.isArray(c))return c.forEach(add);e.appendChild(typeof c==="string"||typeof c==="number"?document.createTextNode(String(c)):c)})(kids);return e}
+/* Markdown an toàn: chỉ dựng bằng DOM + textContent, không dùng innerHTML */
+function inline(text){var out=[],re=/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g,last=0,m;
+ while((m=re.exec(text))){if(m.index>last)out.push(text.slice(last,m.index));var s=m[0];
+  if(s[0]==="*")out.push(h("b",{},s.slice(2,-2)));else if(s[0]==="`")out.push(h("code",{},s.slice(1,-1)));
+  else{var mm=/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/.exec(s);out.push(h("a",{href:mm[2],target:"_blank",rel:"noopener noreferrer"},mm[1]))}
+  last=m.index+s.length}
+ if(last<text.length)out.push(text.slice(last));return out}
+function md(text){var root=h("div",{class:"md"}),L=text.replace(/\r/g,"").split("\n"),i=0;
+ while(i<L.length){var ln=L[i],m;if(!ln.trim()){i++;continue}
+  if(/^```/.test(ln)){var buf=[];i++;while(i<L.length&&!/^```/.test(L[i]))buf.push(L[i++]);i++;root.appendChild(h("pre",{class:"code"},buf.join("\n")));continue}
+  if((m=/^(#{1,4})\s+(.*)$/.exec(ln))){root.appendChild(h("h"+(m[1].length+1),{},inline(m[2])));i++;continue}
+  if(/^\s*-{3,}\s*$/.test(ln)){root.appendChild(h("hr"));i++;continue}
+  if(/^\s*\|.*\|\s*$/.test(ln)){var rws=[];while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i]))rws.push(L[i++]);
+   var cells=function(r){return r.trim().replace(/^\||\|$/g,"").split("|").map(function(c){return c.trim()})};
+   var head=cells(rws[0]),body=rws.slice(1).filter(function(r){return!/^\s*\|?\s*:?-{2,}/.test(r)}).map(cells);
+   root.appendChild(h("table",{},[h("tr",{},head.map(function(c){return h("th",{},inline(c))})),body.map(function(r){return h("tr",{},r.map(function(c){return h("td",{},inline(c))}))})]));continue}
+  if(/^\s*([-*]|\d+\.)\s+/.test(ln)){var ord=/^\s*\d+\./.test(ln),items=[];while(i<L.length&&/^\s*([-*]|\d+\.)\s+/.test(L[i]))items.push(L[i++].replace(/^\s*([-*]|\d+\.)\s+/,""));
+   root.appendChild(h(ord?"ol":"ul",{},items.map(function(x){return h("li",{},inline(x))})));continue}
+  var para=[];while(i<L.length&&L[i].trim()&&!/^(#{1,4}\s|```|\s*\||\s*([-*]|\d+\.)\s)/.test(L[i]))para.push(L[i++]);
+  root.appendChild(h("p",{},inline(para.join(" "))))}
+ return root}
+
+function setMsg(el,t,err){el.textContent=t;el.className="msg"+(err?" err":"")}
+function showLogin(){
+ who.replaceChildren();
+ var email=h("input",{type:"email",placeholder:"email của bạn",autocomplete:"email",required:"required"}),msg=h("div",{class:"msg hide"}),btn=h("button",{type:"submit"},"Gửi link đăng nhập");
+ var f=h("form",{onsubmit:function(e){e.preventDefault();btn.disabled=true;
+   sb.auth.signInWithOtp({email:email.value.trim(),options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}}).then(function(r){
+    msg.classList.remove("hide");btn.disabled=false;
+    /* Luôn báo giống nhau dù email có được mời hay không, để không lộ ai nằm trong danh sách */
+    setMsg(msg,"Nếu email này đã được mời, link đăng nhập sẽ được gửi tới hộp thư của bạn. Hãy mở link trên cùng thiết bị này.",false)})}},[
+  h("p",{class:"sub"},"Chỉ người được mời mới xem được. Nhập email để nhận link đăng nhập."),email,h("div",{style:"margin-top:12px"},btn),msg]);
+ app.replaceChildren(h("div",{class:"card login"},[h("h1",{},"Đăng nhập"),f]))}
+function showReports(user){
+ who.replaceChildren(h("span",{},user.email+"  "),h("button",{class:"ghost",onclick:function(){sb.auth.signOut().then(showLogin)}},"Đăng xuất"));
+ var list=h("div",{class:"list card"},h("div",{class:"empty"},"Đang tải…")),view=h("div",{class:"card"},h("div",{class:"empty"},"Chọn một báo cáo."));
+ app.replaceChildren(h("div",{class:"layout"},[list,view]));
+ sb.from("reports").select("id,kind,period,title,published_at").order("period",{ascending:false}).then(function(r){
+  if(r.error){list.replaceChildren(h("div",{class:"msg err"},"Không đọc được báo cáo. Có thể email của bạn chưa được cấp quyền xem."));return}
+  if(!r.data.length){list.replaceChildren(h("div",{class:"empty"},"Chưa có báo cáo nào."));return}
+  var btns=r.data.map(function(x){var b=h("button",{onclick:function(){open(x,b)}},[h("b",{},(x.kind==="weekly"?"Tuần ":"Tháng ")+x.period),h("small",{},x.title)]);return b});
+  list.replaceChildren.apply(list,btns);
+  function open(x,b){btns.forEach(function(e){e.classList.remove("on")});b.classList.add("on");view.replaceChildren(h("div",{class:"empty"},"Đang tải…"));
+   sb.from("reports").select("body_md").eq("id",x.id).single().then(function(rr){
+    if(rr.error){view.replaceChildren(h("div",{class:"msg err"},"Không mở được báo cáo."));return}view.replaceChildren(md(rr.data.body_md))})}
+  open(r.data[0],btns[0])})}
+function init(){
+ if(!window.supabase||!C.SUPABASE_URL||/YOUR-/.test(C.SUPABASE_URL+C.SUPABASE_ANON_KEY)){app.replaceChildren(h("div",{class:"card login"},[h("h1",{},"Chưa cấu hình"),h("p",{class:"sub"},"Điền SUPABASE_URL và SUPABASE_ANON_KEY trong docs/config.js.")]));return}
+ sb=window.supabase.createClient(C.SUPABASE_URL,C.SUPABASE_ANON_KEY,{auth:{persistSession:true,detectSessionInUrl:true}});
+ sb.auth.getSession().then(function(r){var s=r.data&&r.data.session;if(s)showReports(s.user);else showLogin()});
+ sb.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!document.querySelector(".layout"))showReports(s.user);if(ev==="SIGNED_OUT")showLogin()})}
+init();
+</script>
+</body>
+</html>
