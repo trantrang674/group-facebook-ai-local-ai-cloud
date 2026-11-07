@@ -22,7 +22,7 @@ GATE_CSS = """#gate{position:fixed;inset:0;z-index:50;display:none;align-items:c
 .lg label{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:.88rem;margin:0 0 6px}
 .lg input{width:100%;padding:13px 14px;border:1px solid var(--lgln);border-radius:12px;background:var(--lginp);font:inherit;color:var(--tx)}
 .lg .pw{position:relative}.lg .pw input{padding-right:44px}.lg .pw button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;cursor:pointer;font-size:1.05rem;opacity:.7}
-.lg .go{width:100%;margin-top:18px;padding:14px;border:0;border-radius:12px;color:#fff;font:700 1rem system-ui,sans-serif;background:linear-gradient(90deg,var(--navy),var(--ac));box-shadow:0 8px 20px rgba(31,86,224,.3);cursor:pointer}
+.lg .go{width:100%;margin-top:18px;padding:14px;border:0;border-radius:12px;color:#fff;font:700 1rem var(--font);background:linear-gradient(90deg,var(--navy),var(--ac));box-shadow:0 8px 20px rgba(31,86,224,.3);cursor:pointer}
 .lg .go:disabled{opacity:.6;cursor:not-allowed}
 .lg a.fg{font-weight:500;font-size:.82rem;color:var(--ac);cursor:pointer;text-decoration:underline}
 .lg .foot{font-size:.78rem;color:var(--mut);margin-top:18px}
