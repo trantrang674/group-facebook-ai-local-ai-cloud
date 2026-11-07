@@ -396,7 +396,7 @@ function sources(){
    h("div",{class:"card"},[h("div",{class:"muted"},"SerpAPI tháng này (Trends, transcript)"),h("div",{class:"kpi"},h("div",{class:"n"},sp.used+" / "+sp.budget)),h("div",{class:"bar"},h("i",{style:"width:"+pct+"%"}))])]),
   h("div",{class:"card"},[h("table",{style:"width:100%;border-collapse:collapse"},[h("tr",{},["Nguồn","Trạng thái","Chi tiết"].map(function(x){return h("th",{style:"text-align:left;padding:8px;color:var(--mut);font-size:.8rem"},x)})),
     S.sources.items.map(function(i){return h("tr",{},[h("td",{style:"padding:8px;border-top:1px solid var(--ln)"},i.name),h("td",{style:"padding:8px;border-top:1px solid var(--ln)"},srcTag(i)),h("td",{class:"muted",style:"padding:8px;border-top:1px solid var(--ln)"},i.detail)])})]),
-   h("p",{class:"muted"},"Lỗi thường do mạng (ví dụ Reddit). Bỏ qua là do thiếu key trong .env.")])])}
+   h("p",{class:"muted"},"Lỗi thường do mạng. Bỏ qua là do thiếu key trong .env.")])])}
 
 /* ---------- BÁO CÁO (Markdown an toàn) ---------- */
 function inline(text){

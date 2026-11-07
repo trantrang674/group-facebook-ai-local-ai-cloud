@@ -1,0 +1,159 @@
+name: Quy trình tuần
+
+# 1) TỰ ĐỘNG: 10:00 sáng thứ Hai giờ Việt Nam (03:00 UTC): thu thập dữ liệu thứ Hai-Chủ nhật tuần trước,
+#    chọn chủ đề, viết báo cáo, lập kế hoạch cho tuần bắt đầu hôm nay, rồi đồng bộ lên Supabase.
+# 2) THỦ CÔNG (Actions -> Quy trình tuần -> Run workflow): chọn một trong hai việc:
+#      - "Chạy đầy đủ quy trình tuần (tốn lượt API)"
+#      - "Chỉ cập nhật giao diện (không tốn lượt API)": build lại docs/index.html từ dashboard/index.html, không gọi API nào.
+# LƯU Ý: repo công khai nên nhật ký chạy ai cũng xem được. Các bước dưới đây chủ ý CHỈ in số lượng/trạng thái, không in nội dung.
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"   # GitHub có thể trễ vài phút đến vài chục phút so với giờ hẹn
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Chọn việc cần chạy"
+        type: choice
+        default: "Chạy đầy đủ quy trình tuần (tốn lượt API)"
+        options:
+          - "Chạy đầy đủ quy trình tuần (tốn lượt API)"
+          - "Chỉ cập nhật giao diện (không tốn lượt API)"
+      week:
+        description: "(Chỉ cho chạy đầy đủ) Thứ Hai của tuần cần quét, dạng YYYY-MM-DD. Để trống = tuần vừa kết thúc."
+        type: string
+        required: false
+      debug:
+        description: "(Chỉ cho chạy đầy đủ) In 40 dòng cuối đầu ra của agent. CHÚ Ý: có thể lộ nội dung ra nhật ký công khai."
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  full:
+    name: Chạy đầy đủ quy trình tuần
+    if: ${{ github.event_name == 'schedule' || startsWith(inputs.mode, 'Chạy đầy đủ') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: weekly-pipeline
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Cài thư viện Python
+        run: pip install -r requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cài Claude Code (đã ghim phiên bản)
+        run: npm install -g @anthropic-ai/claude-code@2.1.317
+
+      - name: Tải dữ liệu riêng tư từ Supabase
+        env:
+          SUPABASE_PROJECT_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/cloud_bootstrap.py
+
+      - name: Thu thập dữ liệu (thứ Hai-Chủ nhật tuần trước)
+        env:
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          WEEK_INPUT: ${{ inputs.week }}
+        run: |
+          if [ -n "$WEEK_INPUT" ]; then
+            [[ "$WEEK_INPUT" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "Ngày không hợp lệ"; exit 1; }
+            python scripts/collect_sources.py --week "$WEEK_INPUT" 2>/dev/null | grep -E '^(\[|Cửa sổ|Đã lưu)'
+          else
+            python scripts/collect_sources.py 2>/dev/null | grep -E '^(\[|Cửa sổ|Đã lưu)'
+          fi
+
+      - name: Chạy /weekly (chọn chủ đề, báo cáo tuần, kế hoạch tuần mới)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DEBUG_TAIL: ${{ inputs.debug }}
+        run: |
+          set +e
+          # Agent chỉ có công cụ đọc/ghi file và tìm kiếm web: KHÔNG có shell, nên không đọc được biến môi trường/khóa.
+          claude -p "/weekly" --model sonnet --permission-mode acceptEdits \
+            --allowedTools "Read" "Write" "Edit" "Glob" "Grep" "WebSearch" "Task" "Agent" \
+            > "$RUNNER_TEMP/claude_out.txt" 2>&1
+          code=$?
+          echo "Claude kết thúc với mã $code (đầu ra không được in ra nhật ký công khai)"
+          if [ "$DEBUG_TAIL" = "true" ]; then tail -n 40 "$RUNNER_TEMP/claude_out.txt"; fi
+          exit $code
+
+      - name: Kiểm tra sản phẩm trước khi đồng bộ
+        env:
+          WEEK_INPUT: ${{ inputs.week }}
+        run: |
+          if [ -n "$WEEK_INPUT" ]; then python scripts/cloud_verify.py --week "$WEEK_INPUT"; else python scripts/cloud_verify.py; fi
+
+      - name: Đồng bộ lên Supabase (kế hoạch, chủ đề, báo cáo, nguồn dữ liệu)
+        env:
+          SUPABASE_PROJECT_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          # Không đẩy bài nháp và không đẩy file riêng tư từ runner để không ghi đè công việc của nhân viên trên web.
+          python scripts/sync_supabase.py push --no-drafts --no-private
+          python scripts/cloud_bootstrap.py --upload-state
+
+      - name: Báo qua Telegram (nếu đã cấu hình)
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          python - <<'PY'
+          import os, requests
+          tok, chat = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
+          if tok and chat:
+              ok = os.environ["JOB_STATUS"] == "success"
+              msg = "Quy trình tuần đã chạy xong: dữ liệu, báo cáo và kế hoạch mới đã lên dashboard." if ok else "Quy trình tuần BỊ LỖI. Xem tab Actions trên GitHub."
+              requests.post(f"https://api.telegram.org/bot{tok}/sendMessage", json={"chat_id": chat, "text": msg}, timeout=20)
+          PY
+
+  ui:
+    name: Chỉ cập nhật giao diện (không tốn lượt API)
+    if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'Chỉ cập nhật giao diện') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: ui-build
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build lại docs/index.html từ dashboard/index.html
+        run: python scripts/build_web_app.py
+
+      - name: Đưa bản mới lên GitHub Pages (nếu có thay đổi)
+        run: |
+          if git diff --quiet -- docs/index.html; then
+            echo "Giao diện không đổi, không có gì để cập nhật."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html
+          git commit -m "Cap nhat giao dien web (tu dong build)"
+          git push
+          echo "Đã cập nhật giao diện. GitHub Pages sẽ đăng bản mới sau 1-2 phút."

@@ -123,7 +123,7 @@ SEARCH_QUERIES = [  # (truy vấn, gl, hl, tham số thêm)
     ("how much VRAM do I need to run LLM locally with Ollama", "us", "en", {}),
     ("Ollama OR \"LM Studio\" OR llama.cpp tutorial OR \"case study\" OR \"release notes\"", "us", "en", {"tbs": "qdr:w"}),
     ("chạy AI local trên laptop cần bao nhiêu VRAM hướng dẫn", "vn", "vi", {}),
-    ("\"local LLM\" (site:reddit.com OR site:news.ycombinator.com OR site:discuss.huggingface.co)", "us", "en", {"tbs": "qdr:w"}),
+    ("\"local LLM\" (site:news.ycombinator.com OR site:discuss.huggingface.co)", "us", "en", {"tbs": "qdr:w"}),
     ("how to build AI agent with local LLM vs cloud API cost", "us", "en", {}),
 ]
 

@@ -42,7 +42,20 @@ Mọi người đăng nhập vào MỘT link duy nhất: trang gốc `docs/index
 5. Thêm địa chỉ trang gốc (kết thúc bằng `/`) vào Supabase Authentication -> URL Configuration -> Redirect URLs.
 Không đưa lên Supabase: .env, Brand Brain/FAQ, transcript, dữ liệu thô tuần, danh sách kênh theo dõi.
 
+## Quy trình tự động trên GitHub Actions
+Workflow `.github/workflows/weekly.yml` ("Quy trình tuần"):
+- **Tự động 10:00 sáng thứ Hai (giờ Việt Nam):** thu thập dữ liệu thứ Hai-Chủ nhật tuần trước, chọn chủ đề, viết báo cáo, lập kế hoạch cho tuần bắt đầu hôm đó, đồng bộ lên Supabase. GitHub có thể trễ vài phút đến vài chục phút. Repo công khai không hoạt động 60 ngày thì GitHub tự tắt lịch chạy.
+- **Chạy tay** (Actions -> Quy trình tuần -> Run workflow), chọn:
+  - "Chạy đầy đủ quy trình tuần (tốn lượt API)": như trên; có thể nhập thứ Hai của tuần cần quét.
+  - "Chỉ cập nhật giao diện (không tốn lượt API)": build lại `docs/index.html` từ `dashboard/index.html` rồi đưa lên Pages, không gọi API nào.
+Cài đặt một lần:
+1. Supabase SQL Editor: chạy `supabase/cloud_pipeline.sql`. Sau đó trên máy bạn: `python scripts/sync_supabase.py push` (đưa Brand Brain, FAQ, danh sách kênh vào bảng `private_files`, chỉ service_role đọc được).
+2. GitHub repo -> Settings -> Secrets and variables -> Actions -> New repository secret: `ANTHROPIC_API_KEY`, `SERPER_API_KEY`, `SERPAPI_KEY`, `YOUTUBE_API_KEY`, `SUPABASE_PROJECT_URL`, `SUPABASE_SERVICE_ROLE_KEY` (tùy chọn: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`).
+3. Actions phải được bật; workflow chỉ chạy từ nhánh `main`.
+Lưu ý: nhật ký Actions của repo công khai ai cũng đọc được nên workflow chỉ in số lượng/trạng thái. Đừng bật "debug" khi chạy tay trừ khi chấp nhận có thể lộ nội dung. Agent trên runner chỉ có công cụ đọc/ghi file và tìm kiếm web, không có shell.
+Máy bạn nhận kế hoạch/báo cáo do runner tạo bằng `python scripts/sync_supabase.py pull` (hoặc `both`).
+
 ## Lưu ý
-- Facebook không có API đọc/đăng group, nên phần đăng và đọc comment trong group là thủ công. Số liệu group nhập thủ công vào `data/metrics/` (xuất Insights dạng CSV). Dự án không dùng API Page, YouTube hay GA4, nên mọi số liệu đăng bài và traffic (nếu cần) đều nhập tay vào `data/metrics/`.
+- Facebook không có API đọc/đăng group, nên phần đăng và đọc comment trong group là thủ công. Số liệu group nhập thủ công vào `data/metrics/` (xuất Insights dạng CSV). Dự án không dùng Reddit hay API Page, YouTube hay GA4, nên mọi số liệu đăng bài và traffic (nếu cần) đều nhập tay vào `data/metrics/`.
 - Chưa có bước tự tạo ảnh: agent chỉ ra `image_prompt`. Có thể nối thêm Canva hoặc API tạo ảnh sau.
 - Zalo: Zalo OA API hạn chế hơn Telegram, nên bản này duyệt qua Telegram. Có thể thêm Zalo sau.

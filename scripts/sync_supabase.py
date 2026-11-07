@@ -4,18 +4,22 @@
   python scripts/sync_supabase.py push     # đẩy bài nháp, kế hoạch, chủ đề, trạng thái nguồn, báo cáo lên Supabase
   python scripts/sync_supabase.py both     # pull rồi push (mặc định)
   python scripts/sync_supabase.py push --dry-run   # chỉ báo sẽ đẩy gì
+  Cờ: --no-drafts (không đẩy bài nháp) và --no-private (không đẩy Brand Brain/FAQ/danh sách kênh) dùng cho runner GitHub Actions.
 
 Quy tắc xung đột (đơn giản, có chủ đích): nếu nhân viên đã sửa một bài trên web mà bạn chưa kéo về, lần push sẽ BỎ QUA bài đó
 (không ghi đè công việc của nhân viên); lần pull kế tiếp kéo thay đổi về máy. Nếu bạn sửa cùng bài đó trên máy trong lúc chờ, bản của nhân viên thắng.
-Không đưa lên Supabase: .env, Brand Brain/FAQ, transcript, dữ liệu thô tuần, danh sách kênh theo dõi.
+Bảng nhân viên KHÔNG chứa: .env, Brand Brain/FAQ, transcript, dữ liệu thô tuần, danh sách kênh. Brand Brain/FAQ/danh sách kênh chỉ vào bảng
+private_files (không ai ngoài service_role đọc được) để runner GitHub Actions tải về.
+pull cũng kéo về kế hoạch, chủ đề, báo cáo do runner đám mây tạo (chỉ khi file đó chưa có hoặc cũ hơn trên máy).
 """
 import datetime as dt
 import json
+import os
 import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(os.getenv("PROJECT_ROOT") or Path(__file__).resolve().parent.parent)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import supa  # noqa: E402
 
@@ -102,7 +106,36 @@ def pull(dry=False):
     print(f"pull xong: {applied} bài từ nhân viên, {len(fb)} phản hồi")
 
 
-def push(dry=False):
+def pull_cloud(dry=False):
+    """Kéo kế hoạch, chủ đề, báo cáo do runner đám mây tạo về máy (không ghi đè file local mới hơn)."""
+    n = 0
+    for table, key, folder, ext in (("plans", "week", "plans", ".json"), ("topics", "file", "topics", ".json")):
+        for r in supa.rest("GET", table, params={"select": "*"}).json():
+            dest = ROOT / "data" / folder / f"{r[key]}{ext}"
+            remote_t = dt.datetime.fromisoformat(r["src_mtime"].replace("Z", "+00:00")).timestamp()
+            if dest.exists() and dest.stat().st_mtime + 2 >= remote_t:
+                continue
+            data = r.get("raw") if table == "plans" else r.get("items")
+            if table == "plans" and not data:
+                data = {"week": r["week"], "range": r.get("range"), "notes": r.get("notes"), "slots": r["slots"], "trial_today": r.get("trial_today") or []}
+            print(f"  nhận {table}: {dest.name}")
+            n += 1
+            if not dry:
+                wj(dest, data)
+                os.utime(dest, (remote_t, remote_t))  # giữ mtime gốc để lần push sau không coi là bản mới
+    for r in supa.rest("GET", "reports_internal", params={"select": "kind,period,body_md"}).json():
+        dest = ROOT / "reports" / r["kind"] / f"{r['period']}.md"
+        if dest.exists():
+            continue
+        print(f"  nhận báo cáo: {r['kind']}/{dest.name}")
+        n += 1
+        if not dry:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(r["body_md"], encoding="utf-8")
+    print(f"pull_cloud xong: {n} mục từ runner đám mây")
+
+
+def push(dry=False, drafts=True, private=True):
     from dashboard import sources_status  # tái dùng cách tính trạng thái nguồn của dashboard
 
     state = {}
@@ -110,17 +143,20 @@ def push(dry=False):
         state = json.loads(STATE.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         pass
-    remote = {r["id"]: r for r in supa.rest("GET", "drafts", params={"select": "id,updated_by"}).json()}
-    local = local_drafts()
-    rows, skipped = [], 0
-    for id_, (folder, _p, d) in local.items():
-        if remote.get(id_, {}).get("updated_by", "local") != "local":
-            skipped += 1  # nhân viên đã sửa, chờ pull
-            continue
-        rows.append(draft_row(folder, d))
-    print(f"bài nháp: đẩy {len(rows)}, bỏ qua {skipped} (chờ nhận thay đổi của nhân viên)")
-    if not dry and rows:
-        supa.rest("POST", "drafts?on_conflict=id", json=rows, hdr={"Prefer": "resolution=merge-duplicates,return=minimal"})
+    if drafts:
+        remote = {r["id"]: r for r in supa.rest("GET", "drafts", params={"select": "id,updated_by"}).json()}
+        local = local_drafts()
+        rows, skipped = [], 0
+        for id_, (folder, _p, d) in local.items():
+            if remote.get(id_, {}).get("updated_by", "local") != "local":
+                skipped += 1  # nhân viên đã sửa, chờ pull
+                continue
+            rows.append(draft_row(folder, d))
+        print(f"bài nháp: đẩy {len(rows)}, bỏ qua {skipped} (chờ nhận thay đổi của nhân viên)")
+        if not dry and rows:
+            supa.rest("POST", "drafts?on_conflict=id", json=rows, hdr={"Prefer": "resolution=merge-duplicates,return=minimal"})
+    else:
+        print("bài nháp: bỏ qua (--no-drafts)")
 
     plans = []
     for p in sorted((ROOT / "data" / "plans").glob("*.json")):
@@ -158,6 +194,15 @@ def push(dry=False):
             pass
     if new:
         supa.rest("POST", "feedback", json=new, hdr={"Prefer": "return=minimal"})
+    if private:
+        files = [ROOT / "brand" / "brand-brain.md", ROOT / "brand" / "faq.md", ROOT / "config" / "youtube_channels.txt"]
+        up = [{"path": f.relative_to(ROOT).as_posix(), "content": f.read_text(encoding="utf-8-sig")} for f in files if f.exists()]
+        if up:
+            try:
+                supa.rest("POST", "private_files?on_conflict=path", json=up, hdr={"Prefer": "resolution=merge-duplicates,return=minimal"})
+                print(f"file riêng tư (chỉ service_role đọc được): {len(up)} file")
+            except RuntimeError as e:
+                print("Chưa đẩy được file riêng tư (đã chạy supabase/cloud_pipeline.sql chưa?):", str(e)[:120])
     state["feedback_pushed"] = len(lines)
     state["last_push"] = dt.datetime.now(dt.timezone.utc).isoformat()
     wj(STATE, state)
@@ -170,8 +215,9 @@ def main():
     dry = "--dry-run" in a
     if cmd in ("pull", "both"):
         pull(dry)
+        pull_cloud(dry)
     if cmd in ("push", "both"):
-        push(dry)
+        push(dry, drafts="--no-drafts" not in a, private="--no-private" not in a)
     if cmd not in ("pull", "push", "both"):
         sys.exit(__doc__)
 

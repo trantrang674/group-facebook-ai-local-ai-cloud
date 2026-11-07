@@ -34,7 +34,6 @@ RSS_FEEDS = {
     "the_verge_ai": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
     "tomshardware": "https://www.tomshardware.com/feeds/all",
 }
-SUBREDDITS = ["LocalLLaMA", "ollama", "LocalLLM"]
 DOWN = ["Hai", "Ba", "Tư", "Năm", "Sáu", "Bảy", "Chủ nhật"]
 
 
@@ -93,21 +92,6 @@ def rss():
     return items
 
 
-def reddit():
-    out = []
-    for sub in SUBREDDITS:
-        r = requests.get(f"https://www.reddit.com/r/{sub}/top.json?t=week&limit=25", headers=UA, timeout=TIMEOUT)
-        r.raise_for_status()
-        for c in r.json()["data"]["children"]:
-            d = c["data"]
-            created = dt.datetime.fromtimestamp(d["created_utc"], dt.timezone.utc).astimezone(VN).date()
-            if not (WIN["start"] <= created <= WIN["end"]):
-                continue
-            out.append({"sub": sub, "title": d["title"], "score": d["score"], "comments": d["num_comments"],
-                        "link": "https://reddit.com" + d["permalink"], "text": d.get("selftext", "")[:600]})
-    return out
-
-
 def huggingface():
     # Danh sách "trending" tại thời điểm chạy (không có bộ lọc theo ngày).
     r = requests.get("https://huggingface.co/api/models?sort=trendingScore&limit=30", headers=UA, timeout=TIMEOUT)
@@ -136,7 +120,7 @@ def main():
     import yt_channels
     steps = [
         ("rss", rss), ("serper_news", serp.news), ("serper_search", serp.search), ("serper_autocomplete", serp.autocomplete),
-        ("serpapi_trends", serp.trends), ("youtube_channels", yt_channels.scan), ("reddit", reddit), ("huggingface", huggingface),
+        ("serpapi_trends", serp.trends), ("youtube_channels", yt_channels.scan), ("huggingface", huggingface),
     ]
     for name, fn in steps:
         safe(name, fn)()
