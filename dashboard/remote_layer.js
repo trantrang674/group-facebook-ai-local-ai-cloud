@@ -68,7 +68,7 @@ var REC=/type=recovery/.test(location.hash||"");   /* mở từ link "Quên mậ
 function lgShell(kids,foot){var g=document.getElementById("gate");g.style.display="flex";
  g.replaceChildren(h("div",{class:"lg"},[
   h("div",{class:"logo"},"AI"),
-  h("h1",{},h("em",{},"DASHBOARD CONTENT AI-GROUP FB")),
+  h("h1",{},h("em",{},"CONTENT AI GROUP FB")),
   h("p",{class:"sub"},"Hệ thống nội bộ. Vui lòng đăng nhập để tiếp tục."),
   h("div",{class:"box"},kids),
   h("div",{class:"foot"},foot||"Kết nối được mã hóa. Dữ liệu chỉ hiển thị cho tài khoản đã được duyệt.")]))}
