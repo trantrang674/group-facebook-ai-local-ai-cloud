@@ -61,7 +61,7 @@ def sources_status():
     except Exception:  # noqa: BLE001
         pass
     for f in sorted(d.glob("*.json")):
-        if f.name.startswith("_"):
+        if f.name.startswith("_") or f.stem == "reddit":  # dự án không dùng Reddit
             continue
         try:
             data = rj(f)
