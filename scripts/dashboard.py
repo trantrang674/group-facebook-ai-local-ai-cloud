@@ -96,6 +96,16 @@ def serpapi_usage():
             "serper_used": u.get("serper_used", 0), "serper_total": int(os.environ.get("SERPER_TOTAL_CREDITS", "2500"))}
 
 
+def topics_all():
+    out = []
+    for f in sorted((ROOT / "data" / "topics").glob("*.json")):
+        try:
+            out.append({"file": f.name, "items": rj(f)})
+        except Exception:  # noqa: BLE001
+            continue
+    return out
+
+
 def state():
     topics_f, plan_f = latest("data/topics"), latest("data/plans")
     reports = []
@@ -116,6 +126,7 @@ def state():
         "plan": rj(plan_f) if plan_f else None,
         "plan_file": plan_f.name if plan_f else None,
         "topics": {"file": topics_f.name if topics_f else None, "items": rj(topics_f) if topics_f else []},
+        "topics_all": topics_all(),  # kho chủ đề của mọi tuần (cho bộ lọc tuần)
         "sources": sources_status(),
         "serpapi": serpapi_usage(),
         "reports": reports,

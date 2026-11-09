@@ -23,17 +23,18 @@ function rState(){
  return Promise.all([
   sb.from("drafts").select("*").order("date").order("slot").limit(1000),
   sb.from("plans").select("*").order("src_mtime",{ascending:false}).limit(1),
-  sb.from("topics").select("*").order("src_mtime",{ascending:false}).limit(1),
+  sb.from("topics").select("*").order("src_mtime",{ascending:false}).limit(12),
   sb.from("source_runs").select("*").order("collected_at",{ascending:false}).limit(1),
   sb.from("reports_internal").select("kind,period,title").order("period",{ascending:false}),
   sb.from("feedback").select("draft_id,feedback,created_at").order("created_at",{ascending:false}).limit(10)
  ]).then(function(rs){
-  var dr=chk(rs[0]),pl=chk(rs[1])[0],tp=chk(rs[2])[0],sr=chk(rs[3])[0],rp=chk(rs[4]),fb=chk(rs[5]);
+  var dr=chk(rs[0]),pl=chk(rs[1])[0],tpAll=chk(rs[2]),tp=tpAll[0],sr=chk(rs[3])[0],rp=chk(rs[4]),fb=chk(rs[5]);
   var drafts=dr.map(function(r){var d=Object.assign({},r.extra||{},r);d._folder=r.folder;d.status=(r.folder==="sent"?"pending":r.folder);d.sources=r.sources||[];return d});
   return{now:localNow(),drafts:drafts,
    plan:pl?(pl.raw||{week:pl.week,range:pl.range,notes:pl.notes,slots:pl.slots,trial_today:pl.trial_today}):null,
    plan_file:pl?pl.week+".json":null,
    topics:{file:tp?tp.file+".json":null,items:tp?tp.items:[]},
+   topics_all:tpAll.map(function(x){return{file:x.file+".json",items:x.items||[]}}),
    sources:sr?{date:sr.week,window:sr.window,collected_at:sr.collected_at,items:sr.items||[]}:{date:null,items:[]},
    serpapi:{used:0,budget:250,serper_used:0,serper_total:2500},
    reports:rp.map(function(r){return{kind:r.kind,name:r.period+".md"}}),
