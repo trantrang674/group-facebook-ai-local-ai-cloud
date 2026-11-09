@@ -2,8 +2,7 @@
    Ghi đè (theo quy tắc "khai báo hàm sau thắng") các hàm của dashboard cục bộ: api, runJob, sideCardItems.
    Giao diện phía trên giữ nguyên. Mọi quyền truy cập do RLS của Supabase quyết định, không phải mã ở đây. */
 var RC=window.SITE_CONFIG||{},sb=null,READY=false,ME="";
-TABS=TABS.filter(function(t){return t[0]!=="run"});
-if(tab==="run")tab="home";
+function run(){return h("div")}  /* bản web không chạy lệnh agent: CÀI ĐẶT chỉ hiện nguồn dữ liệu */
 
 function api(path,body){
  if(path==="/api/state")return rState();

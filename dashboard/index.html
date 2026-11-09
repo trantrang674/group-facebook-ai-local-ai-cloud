@@ -180,7 +180,7 @@ var TARGET={tin_ai:20,thu_thuat:35,huong_dan:25,thao_luan:10,cau_hinh:10};
 var PNAME={tin_ai:"Tin AI",thu_thuat:"Thủ thuật",huong_dan:"Hướng dẫn",thao_luan:"Thảo luận",cau_hinh:"Cấu hình","case":"Case"};
 var STNAME={pending:"Chờ duyệt",sent:"Đã gửi Telegram",approved:"Đã duyệt",rejected:"Đã bỏ",posted:"Đã đăng"};
 var DOW=["CN","T2","T3","T4","T5","T6","T7"];
-var S=null, tab=(function(){try{var t=localStorage.getItem("tab");if(t==="sources"||t==="run")t="settings";return TABS.some(function(x){return x[0]===t})?t:"home"}catch(e){return"home"}})(),bellOpen=false,bellFresh={}, qfilter="open", qdate="all", qfocus=null, tpillar="all", tquery="", thideused=false, repSel=null, repText="";
+var S=null, tab=(function(){try{var t=localStorage.getItem("tab");if(t==="sources"||t==="run")t="settings";return TABS.some(function(x){return x[0]===t})?t:"home"}catch(e){return"home"}})(),bellOpen=false,bellFresh={},tick=0, qfilter="open", qdate="all", qfocus=null, tpillar="all", tquery="", thideused=false, repSel=null, repText="";
 var rweek=null, rpillar="all", rquery="";
 
 /* ---------- tiện ích ---------- */
@@ -479,7 +479,7 @@ function run(){
    h("div",{class:"card"},[h("h3",{},"Tiến trình: "+(j.name?j.name+(j.running?" (đang chạy…)":" (xong, mã "+j.code+")"):"chưa chạy")),j.error?h("div",{class:"muted"},j.error):null,h("pre",{class:"log"},j.tail||"")])])])}
 
 load();
-var tick=0;setInterval(function(){tick++;if(!document.hidden&&S&&(S.job.running||tab==="settings"||tick%10===0))load(true)},3000);
+setInterval(function(){tick++;if(!document.hidden&&S&&(S.job.running||tab==="settings"||tick%10===0))load(true)},3000);
 </script>
 </body>
 </html>
