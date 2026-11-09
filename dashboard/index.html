@@ -132,6 +132,8 @@ textarea.ed:disabled{background:transparent;border-color:transparent;padding:0}
 .fchips{display:flex;gap:6px;flex-wrap:wrap}
 /* markdown */
 .md h2,.md h3,.md h4,.md h5{margin:16px 0 6px}.md p{margin:6px 0}.md table{width:100%;border-collapse:collapse;margin:8px 0;border:1px solid var(--ln)}.md th,.md td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--ln)}
+.md h2,.md h3,.md h4,.md h5{background:var(--wns);color:var(--wn);border-left:4px solid var(--or1);border-radius:8px;padding:6px 12px;margin:18px 0 8px}
+.md h2 b,.md h3 b,.md h4 b,.md h5 b{font-weight:inherit}
 .md code{background:var(--bg1);padding:1px 5px;border-radius:4px}.md pre.code{background:var(--bg1);padding:10px;border-radius:8px}.md ul,.md ol{margin:6px 0;padding-left:22px}.md hr{border:0;border-top:1px solid var(--ln)}
 .rep{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:14px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
@@ -434,13 +436,18 @@ function sources(){
    h("p",{class:"muted"},"Lỗi thường do mạng. Bỏ qua là do thiếu key trong .env.")])])}
 
 /* ---------- BÁO CÁO (Markdown an toàn) ---------- */
+function fd(t){return t.replace(/\b(\d{4})-(\d\d)-(\d\d)\b/g,"$3/$2/$1")}  /* ngày/tháng/năm */
+function periodLabel(r){var n=r.name.replace(/\.md$/,""),m;
+ if(r.kind==="weekly"&&(m=/^(\d{4}-\d\d-\d\d)/.exec(n)))return"Tuần "+fd(m[1])+" → "+fd(addDays(m[1],6));
+ if((m=/^(\d{4})-(\d\d)$/.exec(n)))return"Tháng "+m[2]+"/"+m[1];
+ return(r.kind==="weekly"?"Tuần ":"Tháng ")+fd(n)}
 function inline(text){
  var out=[],re=/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g,last=0,m;
- while((m=re.exec(text))){if(m.index>last)out.push(text.slice(last,m.index));var s=m[0];
+ while((m=re.exec(text))){if(m.index>last)out.push(fd(text.slice(last,m.index)));var s=m[0];
   if(s[0]==="*")out.push(h("b",{},s.slice(2,-2)));else if(s[0]==="`")out.push(h("code",{},s.slice(1,-1)));
   else{var mm=/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/.exec(s);out.push(h("a",{href:mm[2],target:"_blank",rel:"noopener noreferrer"},mm[1]))}
   last=m.index+s.length}
- if(last<text.length)out.push(text.slice(last));return out}
+ if(last<text.length)out.push(fd(text.slice(last)));return out}
 function md(text){
  var root=h("div",{class:"md"}),L=text.replace(/\r/g,"").split("\n"),i=0;
  while(i<L.length){var ln=L[i],m;
@@ -455,17 +462,19 @@ function md(text){
   if(/^\s*([-*]|\d+\.)\s+/.test(ln)){var ord=/^\s*\d+\./.test(ln),items=[];while(i<L.length&&/^\s*([-*]|\d+\.)\s+/.test(L[i]))items.push(L[i++].replace(/^\s*([-*]|\d+\.)\s+/,""));
    root.appendChild(h(ord?"ol":"ul",{},items.map(function(x){return h("li",{},inline(x))})));continue}
   var para=[];while(i<L.length&&L[i].trim()&&!/^(#{1,4}\s|```|\s*\||\s*([-*]|\d+\.)\s)/.test(L[i]))para.push(L[i++]);
-  root.appendChild(h("p",{},inline(para.join(" "))))}
+  if(para.length===1&&/^\*\*[^*]+\*\*:?\s*$/.test(para[0]))root.appendChild(h("h4",{class:"ptitle"},inline(para[0].replace(/:\s*$/,""))));  /* dòng chỉ có chữ đậm = tiêu đề đoạn */
+  else root.appendChild(h("p",{},inline(para.join(" "))))}
  return root}
-function openReport(r){repSel=r.kind+"/"+r.name;api("/api/report?kind="+r.kind+"&name="+encodeURIComponent(r.name)).then(function(j){repText=j.text;render()}).catch(function(e){repText="Lỗi: "+e.message;render()})}
+var repCur=null;
+function openReport(r){repSel=r.kind+"/"+r.name;repCur=r;api("/api/report?kind="+r.kind+"&name="+encodeURIComponent(r.name)).then(function(j){repText=j.text;render()}).catch(function(e){repText="Lỗi: "+e.message;render()})}
 function reports(){
  var list=S.reports.slice().sort(function(a,b){return b.name.localeCompare(a.name)});
  if(list.length&&!repSel){setTimeout(function(){if(!repSel&&tab==="reports")openReport(list[0])},0)}
  return h("div",{},[pageHead("BÁO CÁO RS","Báo cáo tuần và tháng do agent phân tích tạo ra"),
   h("div",{class:"rep"},[
    h("div",{class:"card"},[h("h3",{},"Danh sách"),list.length?list.map(function(r){var k=r.kind+"/"+r.name;
-     return h("div",{},h("button",{class:"b sm"+(repSel===k?" on":""),style:"margin:3px 0;width:100%;text-align:left;border-radius:10px",onclick:function(){openReport(r)}},(r.kind==="weekly"?"Tuần ":"Tháng ")+r.name.replace(/\.md$/,"")))}):h("div",{class:"empty"},"Chưa có báo cáo. Chạy /weekly hoặc /monthly.")]),
-   h("div",{class:"card"},repText?md(repText):h("div",{class:"empty"},list.length?"Đang tải…":"Chọn một báo cáo."))])])}
+     return h("div",{},h("button",{class:"b sm"+(repSel===k?" on":""),style:"margin:3px 0;width:100%;text-align:left;border-radius:10px",onclick:function(){openReport(r)}},periodLabel(r)))}):h("div",{class:"empty"},"Chưa có báo cáo. Chạy /weekly hoặc /monthly.")]),
+   h("div",{class:"card"},repText?[repCur?h("div",{class:"row",style:"margin-bottom:6px"},[tag("Giai đoạn: "+periodLabel(repCur),"t-wn")]):null,md(repText)]:h("div",{class:"empty"},list.length?"Đang tải…":"Chọn một báo cáo."))])])}
 
 /* ---------- CÀI ĐẶT (nguồn dữ liệu + chạy lệnh) ---------- */
 function settings(){return h("div",{},[pageHead("CÀI ĐẶT","Nguồn dữ liệu và các lệnh agent chạy trên máy của bạn"),sources(),h("div",{style:"height:26px"}),run()])}
