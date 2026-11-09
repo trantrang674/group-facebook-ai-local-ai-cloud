@@ -1,9 +1,11 @@
 """Tạo bản web của dashboard: docs/index.html = dashboard/index.html + lớp dữ liệu Supabase (dashboard/remote_layer.js).
 Chạy lại mỗi khi sửa giao diện dashboard/index.html:  python scripts/build_web_app.py
 """
+import base64
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+LOGO = ROOT / "dashboard" / "logo.jpg"
 SRC = ROOT / "dashboard" / "index.html"
 LAYER = ROOT / "dashboard" / "remote_layer.js"
 OUT = ROOT / "docs" / "index.html"   # MỘT link duy nhất (trang gốc) cho mọi người đăng nhập
@@ -14,7 +16,7 @@ GATE_CSS = """#gate{position:fixed;inset:0;z-index:50;display:none;align-items:c
  background:linear-gradient(135deg,#e9eefb,#d8dff2 60%,#e6ebf7);--lgbox:#fff;--lginp:#eaf0ff;--lgln:#cfd8f3}
 @media(prefers-color-scheme:dark){#gate{background:linear-gradient(135deg,#0a1226,#0d1730 60%,#0a1226);--lgbox:#121c36;--lginp:#182a57;--lgln:#24335a}}
 .lg{width:100%;max-width:450px;text-align:center}
-.lg .logo{width:64px;height:64px;border-radius:18px;background:#fff;color:var(--navy);box-shadow:0 6px 20px rgba(15,40,110,.18);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem}
+.lg .logo{overflow:hidden;width:64px;height:64px;border-radius:18px;background:#fff;color:var(--navy);box-shadow:0 6px 20px rgba(15,40,110,.18);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem}
 .lg h1{font-size:1.65rem;margin:0;letter-spacing:.3px;color:var(--tx);background:none;-webkit-text-fill-color:currentColor}.lg h1 em{color:var(--navy);font-style:normal}
 @media(prefers-color-scheme:dark){.lg h1 em{color:#9bbcff}}
 .lg .sub{color:var(--mut);font-size:.9rem;margin:6px 0 22px}
@@ -47,6 +49,9 @@ def main():
     html = must_replace(html, "<script>\nvar TABS=",
                         f'<script src="{CDN}"></script>\n<script src="config.js"></script>\n<script>\nvar TABS=', "script đầu")
     html = must_replace(html, "\nload();\nsetInterval(", "\n" + layer + "\nstartRemote();\nsetInterval(", "load()")
+    # Logo nhúng thẳng vào trang (data URI) để bản web không cần file ảnh riêng; Action chỉ commit docs/index.html.
+    logo = base64.b64encode(LOGO.read_bytes()).decode("ascii")
+    html = html.replace("logo.jpg", "data:image/jpeg;base64," + logo)
     OUT.write_text(html, encoding="utf-8", newline="\n")
     print(f"Đã tạo {OUT} ({len(html)} ký tự)")
 

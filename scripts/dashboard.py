@@ -303,6 +303,8 @@ class H(BaseHTTPRequestHandler):
         path, _, qs = self.path.partition("?")
         if path == "/":
             return self.send((ROOT / "dashboard" / "index.html").read_bytes(), ctype="text/html; charset=utf-8")
+        if path == "/logo.jpg":
+            return self.send((ROOT / "dashboard" / "logo.jpg").read_bytes(), ctype="image/jpeg")
         if path == "/api/state":
             return self.send(state())
         if path == "/api/report":
