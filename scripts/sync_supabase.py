@@ -136,7 +136,7 @@ def pull_cloud(dry=False):
 
 
 def push(dry=False, drafts=True, private=True):
-    from dashboard import sources_status  # tái dùng cách tính trạng thái nguồn của dashboard
+    from dashboard import sources_status, serpapi_usage  # tái dùng cách tính trạng thái nguồn của dashboard
 
     state = {}
     try:
@@ -173,7 +173,10 @@ def push(dry=False, drafts=True, private=True):
             title = next((ln.lstrip("# ").strip() for ln in body.splitlines() if ln.startswith("#")), f"Báo cáo {p.stem}")
             reports.append({"kind": kind, "period": p.stem, "title": title[:200], "body_md": body})
     src = sources_status()
-    runs = [{"week": src["date"], "window": src.get("window"), "collected_at": src.get("collected_at"), "items": src["items"]}] if src.get("date") else []
+    # Bộ đếm lượt gọi API đi kèm dòng source_runs (mục giả "_usage", bản web tách ra khi hiển thị) để nhân viên xem được
+    # mà không cần đổi schema Supabase. Chỉ là số lượt dùng, không có khóa API.
+    items = list(src["items"]) + [{"name": "_usage", "status": "ok", "usage": serpapi_usage()}]
+    runs = [{"week": src["date"], "window": src.get("window"), "collected_at": src.get("collected_at"), "items": items}] if src.get("date") else []
     print(f"kế hoạch {len(plans)}, chủ đề {len(topics)}, báo cáo {len(reports)}, lượt quét nguồn {len(runs)}")
     if dry:
         return

@@ -35,8 +35,8 @@ function rState(){
    plan_file:pl?pl.week+".json":null,
    topics:{file:tp?tp.file+".json":null,items:tp?tp.items:[]},
    topics_all:tpAll.map(function(x){return{file:x.file+".json",items:x.items||[]}}),
-   sources:sr?{date:sr.week,window:sr.window,collected_at:sr.collected_at,items:sr.items||[]}:{date:null,items:[]},
-   serpapi:{used:0,budget:250,serper_used:0,serper_total:2500},
+   sources:sr?{date:sr.week,window:sr.window,collected_at:sr.collected_at,items:(sr.items||[]).filter(function(i){return i.name!=="_usage"})}:{date:null,items:[]},
+   serpapi:((sr&&sr.items||[]).filter(function(i){return i.name==="_usage"})[0]||{}).usage||{used:0,budget:250,serper_used:0,serper_total:2500},
    reports:rp.map(function(r){return{kind:r.kind,name:r.period+".md"}}),
    feedback:fb.reverse().map(function(f){return{id:f.draft_id,feedback:f.feedback}}),
    env:{telegram:false,claude:true},job:{running:false,name:null,code:null,tail:""}}})}
