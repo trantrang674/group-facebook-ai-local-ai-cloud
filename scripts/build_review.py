@@ -60,7 +60,7 @@ PAGE = """<!doctype html>
 <title>Duyệt bài nháp</title>
 <style>
 :root{--bg:#f6f7f9;--card:#fff;--tx:#14181f;--mut:#5b6572;--ln:#dfe3e8;--ac:#0b5fff;--ok:#1a7f4b;--wn:#a15c00;--bad:#c0262d}
-@media(prefers-color-scheme:dark){:root{--bg:#0f1318;--card:#171c23;--tx:#e8ecf1;--mut:#97a1ad;--ln:#2a313b;--ac:#6ea0ff;--ok:#5fd093;--wn:#f0b45a;--bad:#ff7b80}}
+@media not all{:root{--bg:#0f1318;--card:#171c23;--tx:#e8ecf1;--mut:#97a1ad;--ln:#2a313b;--ac:#6ea0ff;--ok:#5fd093;--wn:#f0b45a;--bad:#ff7b80}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,"Segoe UI",sans-serif}
 main{max-width:1100px;margin:0 auto;padding:24px 16px 64px}
 h1{font-size:1.4rem;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 20px}

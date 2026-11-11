@@ -14,11 +14,11 @@ CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supaba
 
 GATE_CSS = """#gate{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:16px;overflow:auto;
  background:linear-gradient(135deg,#e9eefb,#d8dff2 60%,#e6ebf7);--lgbox:#fff;--lginp:#eaf0ff;--lgln:#cfd8f3}
-@media(prefers-color-scheme:dark){#gate{background:linear-gradient(135deg,#0a1226,#0d1730 60%,#0a1226);--lgbox:#121c36;--lginp:#182a57;--lgln:#24335a}}
+@media not all{#gate{background:linear-gradient(135deg,#0a1226,#0d1730 60%,#0a1226);--lgbox:#121c36;--lginp:#182a57;--lgln:#24335a}}
 .lg{width:100%;max-width:450px;text-align:center}
 .lg .logo{overflow:hidden;width:64px;height:64px;border-radius:18px;background:#fff;color:var(--navy);box-shadow:0 6px 20px rgba(15,40,110,.18);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem}
 .lg h1{font-size:1.65rem;margin:0;letter-spacing:.3px;color:var(--tx);background:none;-webkit-text-fill-color:currentColor}.lg h1 em{color:var(--navy);font-style:normal}
-@media(prefers-color-scheme:dark){.lg h1 em{color:#9bbcff}}
+@media not all{.lg h1 em{color:#9bbcff}}
 .lg .sub{color:var(--mut);font-size:.9rem;margin:6px 0 22px}
 .lg .box{background:var(--lgbox);border-radius:18px;padding:24px;text-align:left;box-shadow:0 10px 30px rgba(15,40,110,.14)}
 .lg label{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:.88rem;margin:0 0 6px}
